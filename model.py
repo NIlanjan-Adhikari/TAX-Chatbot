@@ -43,7 +43,8 @@ def load_llm():
         model = "llama-2-7b-chat.ggmlv3.q8_0.bin",
         model_type="llama",
         max_new_tokens = 512,
-        temperature = 0.5
+        temperature = 0,
+        stream = True
     )
     return llm
 
@@ -70,7 +71,7 @@ async def start():
     chain = qa_bot()
     msg = cl.Message(content="Starting the bot...")
     await msg.send()
-    msg.content = "Hi, Welcome to Medical Bot. What is your query?"
+    msg.content = "Hi, Welcome to Candy TAX Bot. What is your query?"
     await msg.update()
 
     cl.user_session.set("chain", chain)
@@ -87,7 +88,7 @@ async def main(message):
     sources = res["source_documents"]
 
     if sources:
-        answer += f"\nSources:" + str(sources)
+        answer += f"\n\nSources:" + str(sources) + "\n\n*********************************************************************\n\n"
     else:
         answer += "\nNo sources found"
 
