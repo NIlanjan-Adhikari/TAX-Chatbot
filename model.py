@@ -85,12 +85,38 @@ async def main(message):
     cb.answer_reached = True
     res = await chain.acall(message, callbacks=[cb])
     answer = res["result"]
-    sources = res["source_documents"]
+    sources = res["source_documents"].strip()
+    source_elements = []
+
+    # Get the documents from the user session
+    docs = cl.user_session.get("docs")
+    metadatas = [doc.metadata for doc in docs]
+    all_sources = [m["source"] for m in metadatas]
 
     if sources:
-        answer += f"\n\nSources:" + str(sources) + "\n\n*********************************************************************\n\n"
-    else:
-        answer += "\nNo sources found"
+        found_sources = []
 
-    await cl.Message(content=answer).send()
+        # Add the sources to the message
+        for source in sources.split(","):
+            source_name = source.strip().replace(".", "")
+            # Get the index of the source
+            try:
+                index = all_sources.index(source_name)
+            except ValueError:
+                continue
+            text = docs[index].page_content
+            found_sources.append(source_name)
+            # Create the text element referenced in the message
+            source_elements.append(cl.Text(content=text, name=source_name))
+
+        if found_sources:
+            answer += f"\nSources: {', '.join(found_sources)}"
+        else:
+            answer += "\nNo sources found"
+
+    if cb.has_streamed_final_answer:
+        cb.final_stream.elements = source_elements
+        await cb.final_stream.update()
+    else:
+        await cl.Message(content=answer, elements=source_elements).send()
 
